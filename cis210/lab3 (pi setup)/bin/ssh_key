@@ -1,0 +1,27 @@
+#!/bin/bash
+# Script to live on go.eecis.udel.edu
+# authorized_keys calls this when an appropriate ssh key is used
+# Dummy command will be nickname to use
+
+set -- $SSH_ORIGINAL_COMMAND
+nickname=${1%%dummy}
+nickname=${nickname:-pi}
+
+egrep -q "^Host ${nickname}$" ${HOME}/.ssh/config >/dev/null 2>&1 || \
+    { echo "$nickname not configured" ; exit 1 ; }
+
+function createConfig() {
+	cd ${HOME}/.ssh
+	# Search for line 'Host ${nickname}'. Go to n/ext line, substitute
+	sed -i "/^Host ${nickname}$/{n;s/Port [0-9]*/Port $port/;}" config
+}
+echo Connection from $SSH_CLIENT
+while read line
+do
+  	pend=${line#Allocated port }
+	if [ "${pend}" != "${line}" ]
+	then
+  		port=${pend% for remote forward to localhost:22*}
+		[ "$pend" != "$port" ] && createConfig
+	fi
+done
